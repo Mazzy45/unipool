@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:uni_pool/home_page.dart';
+import 'home_page.dart';
 
 // Define the two roles for clarity
 enum UserRole {
@@ -9,14 +9,23 @@ enum UserRole {
 
 // --- Login Screen ---
 
-class LOGIN extends StatefulWidget {
-  const LOGIN({super.key});
+class LoginPage extends StatelessWidget {
+  const LoginPage({super.key});
 
   @override
-  State<LOGIN> createState() => _LOGINState();
+  Widget build(BuildContext context) {
+    return Scaffold(body: Center(child: Login()));
+  }
 }
 
-class _LOGINState extends State<LOGIN> {
+class Login extends StatefulWidget {
+  const Login({super.key});
+
+  @override
+  State<Login> createState() => _LOGINState();
+}
+
+class _LOGINState extends State<Login> {
   // Initial state is set to passenger, mimicking the first file's focus
   UserRole _currentRole = UserRole.passenger;
   String _email = '';
