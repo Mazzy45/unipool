@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:uni_pool/screens/home_page.dart';
+import 'package:uni_pool/home_page.dart';
 
 // Define the two roles for clarity
 enum UserRole {
