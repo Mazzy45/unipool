@@ -244,7 +244,7 @@ class _LOGINState extends State<Login> {
                     children: [
                       // UniPool Logo
                       Padding(
-                        padding: const EdgeInsets.only(bottom: 4, right: 98),
+                        padding: const EdgeInsets.only(bottom: 4),
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
