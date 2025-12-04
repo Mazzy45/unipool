@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:developer';
+import 'dart:convert';
 import 'home_page.dart';
+import 'create_account_page.dart';
 
 // Define the two roles for clarity
 enum UserRole {
@@ -37,9 +41,9 @@ class _LOGINState extends State<Login> {
   static const String _logoIconUrl = "https://storage.googleapis.com/tagjs-prod.appspot.com/v1/tTDeXqFOUJ/1vfnjyz3_expires_30_days.png";
   
   // Role-specific button logic
-  void _handleLogin() {
-    String roleName = _currentRole == UserRole.passenger ? 'Passenger' : 'Driver';
-    
+  void _handleLogin() async {
+    String requestedRole = _currentRole == UserRole.passenger ? 'passenger' : 'driver';
+
     // 1. Check for empty fields
     if (_email.isEmpty || _password.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -48,7 +52,7 @@ class _LOGINState extends State<Login> {
           backgroundColor: Colors.red,
         ),
       );
-      print('Login failed: Email or Password field is empty.');
+      log('Login failed: Email or Password field is empty.');
       return;
     }
 
@@ -61,14 +65,73 @@ class _LOGINState extends State<Login> {
           backgroundColor: Colors.orange,
         ),
       );
-      print('Login failed: Invalid email domain.');
+      log('Login failed: Invalid email domain.');
       return;
     }
 
-    // --- LOGIN SUCCESS & NAVIGATION LOGIC (Only runs if all validation passes) ---
-    print('Attempting to log in as $roleName with Email: $_email');
+    // 3. Check SharedPreferences for registered account
+    final prefs = await SharedPreferences.getInstance();
+    final userDataJSon = prefs.getString(_email);
+
+    if (userDataJSon == null) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Account does not exist.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      log('Login failed: Account not found.');
+      return;
+    }
+
+    final userData = jsonDecode(userDataJSon) as Map<String, dynamic>;
+    final savedRole = (userData['role'] as String).toLowerCase();
+    final savedPassword = userData['password'];
+    final isVerified = userData['isVerified'] == 'true';
+
+    if (!isVerified) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Account not verified. Please verify your account first.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      log('Login failed: Account not verified.');
+      return;
+    }
+
+    if (savedRole != requestedRole.toLowerCase()) {
+      if (!mounted) return;
+      String displayRole = savedRole;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Please log in as a $displayRole. Please switch your role selection.'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      log('Login failed: Role mismatch. Saved: $savedRole. Requested: $requestedRole.');
+      return;
+    }
+
+    if (savedPassword != _password) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Incorrect password.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      log('Login failed: Wrong password.');
+      return;
+    }
+
+    // --- LOGIN SUCCESS ---
+    log('Login successful as ${requestedRole.toLowerCase()} with Email: $_email');
 
     if (_currentRole == UserRole.passenger) {
+      if (!mounted) return;
       // Navigate to Dashboard for passenger
       Navigator.push(
         context,
@@ -303,7 +366,7 @@ class _LOGINState extends State<Login> {
                         child: Padding(
                           padding: const EdgeInsets.only(bottom: 34, right: 32),
                           child: InkWell(
-                            onTap: () => print('Forgot Password clicked'),
+                            onTap: () => log('Forgot Password clicked'),
                             child: const Text(
                               "Forgot Password?",
                               style: TextStyle(
@@ -357,7 +420,10 @@ class _LOGINState extends State<Login> {
                             ),
                             const SizedBox(width: 6),
                             InkWell(
-                              onTap: () => print('Create Account clicked'),
+                              onTap: () => Navigator.push(
+                                context,
+                                MaterialPageRoute(builder: (_) => const CreateAccountPage()),
+                              ),
                               child: const Text(
                                 "Create Account",
                                 style: TextStyle(
